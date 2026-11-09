@@ -27,3 +27,5 @@ app:
   bootstrap-admin:
     email: admin@example.com
     password: admin12345
+  demo-seed:
+    enabled: false

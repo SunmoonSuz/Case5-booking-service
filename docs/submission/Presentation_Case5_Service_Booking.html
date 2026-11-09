@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Форум «Умная индустрия» — Кейс №5: Сервис записи на услуги</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #0f172a;
+      color: #0f172a;
+      padding: 24px;
+    }
+    .slide {
+      width: 1120px;
+      height: 630px;
+      margin: 0 auto 32px auto;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 44px 56px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.35);
+      page-break-after: always;
+      position: relative;
+      overflow: hidden;
+      border-top: 10px solid #0d9488;
+    }
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 14px;
+      margin-bottom: 20px;
+    }
+    .badge {
+      background: #ccfbf1;
+      color: #0f766e;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    h1 { font-size: 38px; line-height: 1.2; color: #0f172a; margin-bottom: 16px; }
+    h2 { font-size: 26px; color: #0f172a; font-weight: 800; }
+    h3 { font-size: 18px; color: #0f766e; margin-bottom: 8px; font-weight: 700; }
+    p, li { font-size: 16px; line-height: 1.5; color: #334155; }
+    ul { padding-left: 22px; }
+    li { margin-bottom: 8px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; flex: 1; }
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 18px 20px;
+    }
+    .card-accent {
+      background: #f0fdfa;
+      border: 1px solid #99f6e4;
+      border-radius: 12px;
+      padding: 18px 20px;
+    }
+    .code-box {
+      background: #0f172a;
+      color: #5eead4;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 14px;
+      padding: 16px;
+      border-radius: 10px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+    .slide-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: #64748b;
+      border-top: 1px solid #f1f5f9;
+      padding-top: 12px;
+      margin-top: 16px;
+    }
+    .kpi { font-size: 30px; font-weight: 800; color: #0d9488; margin-bottom: 4px; }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .slide { box-shadow: none; margin: 0; width: 100%; height: 100vh; border-radius: 0; }
+      @page { size: landscape; margin: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- СЛАЙД 1 -->
+  <section class="slide">
+    <div>
+      <span class="badge">Форум «Умная индустрия» • Кейс №5 • Уровень: Продвинутый (1.5x)</span>
+      <h1 style="margin-top: 28px;">Сервис онлайн-записи на услуги с защитой от двойного бронирования</h1>
+      <p style="font-size: 20px; color: #475569; margin-bottom: 28px;">
+        Номинация: «Программирование (разработка мобильных и веб-приложений)»
+      </p>
+      <div class="grid-3">
+        <div class="card-accent">
+          <h3>Backend &amp; СУБД</h3>
+          <p>Kotlin 2.0.21, Java 21 Virtual Threads, Spring Boot 3.3.5, PostgreSQL 16 (GiST Exclusion Constraint), Flyway.</p>
+        </div>
+        <div class="card-accent">
+          <h3>Frontend SPA</h3>
+          <p>React 18, TypeScript 5.6 (strict), Vite 6, TanStack Query v5, Tailwind CSS, мобильная адаптивность 360px+.</p>
+        </div>
+        <div class="card-accent">
+          <h3>Готовность</h3>
+          <p>Развёрнутый прототип v1.0.0, OpenAPI 3.0, схема БД, 33 автотеста, расчёт ROI и матрица рисков.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Кейс №5: Сервис записи на услуги</span>
+      <span>Слайд 1 из 10</span>
+    </div>
+  </section>
+
+  <!-- СЛАЙД 2 -->
+  <section class="slide">
+    <div>
+      <div class="slide-header">
+        <h2>1. Заказчик, контекст и решаемая проблема</h2>
+        <span class="badge">Универсальная структура кейса</span>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Контекст заказчика</h3>
+          <ul>
+            <li>Предприятия сферы услуг (салоны красоты, барбершопы, сервисные центры, медицинские кабинеты) со штатом 3–25 специалистов.</li>
+            <li>Ежедневный поток: 25–150 визитов с разной длительностью услуг (30 и 60 минут) и сменным графиком мастеров.</li>
+            <li>Необходимость круглосуточного самообслуживания клиентов без участия диспетчера.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Боли бизнеса при ручной записи</h3>
+          <ul>
+            <li><strong>Овербукинг (двойная запись):</strong> накладки при одновременной записи двух клиентов на один слот.</li>
+            <li><strong>Потеря до 22% обращений</strong> в вечернее и ночное время (20:00–10:00).</li>
+            <li><strong>До 60% рабочего времени администратора</strong> тратится на переписку в мессенджерах и согласование окон.</li>
+            <li>Искажение финансовой истории при изменении прайс-листа.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Форум «Умная индустрия» • Кейс №5</span>
+      <span>Слайд 2 из 10</span>
+    </div>
+  </section>
+
+  <!-- СЛАЙД 3 -->
+  <section class="slide">
+    <div>
+      <div class="slide-header">
+        <h2>2. Исходные материалы и оговорка о синтетических данных</h2>
+        <span class="badge">Обязательное требование Положения</span>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Предзаполненный демо-каталог (DemoDataBootstrapRunner)</h3>
+          <ul>
+            <li><strong>5 услуг (30 и 60 мин):</strong> Мужская стрижка (1800 ₽), Моделирование бороды (1100 ₽), Комплекс Стрижка+Борода (2500 ₽), Экспресс-укладка (900 ₽), Детская стрижка (1200 ₽).</li>
+            <li><strong>3 специалиста:</strong> Алексей Громов, Дмитрий Волков, Елена Смирнова с привязкой компетенций M:N.</li>
+            <li><strong>Расписание 7 дней:</strong> 10:00–14:00 и 15:00–20:00 (обед 14:00–15:00).</li>
+            <li><strong>Тестовые аккаунты:</strong> Клиент и Администратор с кнопками входа в 1 клик.</li>
+          </ul>
+        </div>
+        <div class="card-accent">
+          <h3>⚠️ Важное предупреждение (Синтетические данные)</h3>
+          <ul>
+            <li><strong>Источник и метод:</strong> данные формируются детерминированным сидером <code>DemoDataBootstrapRunner.kt</code> по шаблону предприятия сферы услуг.</li>
+            <li><strong>Обоснование:</strong> данные полноценно отражают реальные сменные графики, перерывы и конкуренцию за 30/60-минутные слоты.</li>
+            <li><strong>Этическая и юридическая оговорка:</strong> ПДн реальных граждан не используются (152-ФЗ). Домен <code>@booking.local</code> и телефоны <code>+7900000000X</code> являются фиктивными учебными идентификаторами.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Форум «Умная индустрия» • Кейс №5</span>
+      <span>Слайд 3 из 10</span>
+    </div>
+  </section>
+
+  <!-- СЛАЙД 4 -->
+  <section class="slide">
+    <div>
+      <div class="slide-header">
+        <h2>3. Архитектура системы и технологический стек</h2>
+        <span class="badge">Full-Stack Architecture</span>
+      </div>
+      <div class="grid-3">
+        <div class="card">
+          <h3>Клиентский уровень (SPA)</h3>
+          <ul>
+            <li><strong>React 18 + TypeScript 5.6</strong></li>
+            <li><strong>TanStack Query v5:</strong> кэширование слотов и мгновенная инвалидация при <code>409 Conflict</code>.</li>
+            <li><strong>Единая таймзона:</strong> явное форматирование <code>Europe/Moscow</code> через <code>Intl.DateTimeFormat</code>.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Серверное ядро (API)</h3>
+          <ul>
+            <li><strong>Kotlin 2.0 + Spring Boot 3.3.5</strong></li>
+            <li><strong>Модули:</strong> <code>identity</code>, <code>catalog</code>, <code>schedule</code>, <code>booking</code>, <code>shared</code>.</li>
+            <li><strong>Java 21 Virtual Threads:</strong> высокая пропускная способность при пиковых нагрузках.</li>
+            <li><strong>Spring Security:</strong> HttpOnly Cookie <code>JSESSIONID</code> + <code>BCrypt (12)</code>.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Хранилище (PostgreSQL 16)</h3>
+          <ul>
+            <li><strong>Flyway миграции:</strong> строгая валидация схемы <code>ddl-auto: validate</code>.</li>
+            <li><strong>Хранение времени в UTC:</strong> тип <code>TIMESTAMPTZ</code>.</li>
+            <li><strong>Price Snapshots:</strong> фиксация названия и цены услуги в момент создания записи.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Форум «Умная индустрия» • Кейс №5</span>
+      <span>Слайд 4 из 10</span>
+    </div>
+  </section>
+
+  <!-- СЛАЙД 5 -->
+  <section class="slide">
+    <div>
+      <div class="slide-header">
+        <h2>4. Аппаратная защита от двойного бронирования (Критерий №1)</h2>
+        <span class="badge">PostgreSQL btree_gist</span>
+      </div>
+      <div class="grid-2">
+        <div>
+          <h3>Исключение гонки потоков (TOCTOU) на уровне СУБД</h3>
+          <p style="margin-bottom: 12px;">
+            Вместо ненадёжных проверок <code>SELECT COUNT(*)</code> в коде приложения применён частичный индекс исключения <strong>GiST Exclusion Constraint</strong> в PostgreSQL 16:
+          </p>
+          <div class="code-box">CREATE EXTENSION IF NOT EXISTS btree_gist;
+
+ALTER TABLE bookings
+ADD CONSTRAINT no_overlapping_active_bookings
+EXCLUDE USING gist (
+  master_id WITH =,
+  (tstzrange(start_time, end_time, '[)')) WITH &amp;&amp;
+) WHERE (status IN ('PENDING', 'CONFIRMED'));</div>
+        </div>
+        <div class="card-accent">
+          <h3>Как это работает в бою</h3>
+          <ul>
+            <li>Полуоткрытый интервал <code>[start_time, end_time)</code> позволяет стыковать записи вплотную (<code>10:00–11:00</code> и <code>11:00–12:00</code>).</li>
+            <li>При отмене записи (<code>CANCELLED</code> / <code>REJECTED</code>) слот автоматически освобождается без удаления строки из истории.</li>
+            <li><strong>Стресс-тест (20 параллельных потоков):</strong> при одновременном старте через <code>CyclicBarrier</code> ровно 1 поток получает <code>201 Created</code>, а 19 потоков — <code>409 Conflict (SLOT_ALREADY_BOOKED)</code>.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Форум «Умная индустрия» • Кейс №5</span>
+      <span>Слайд 5 из 10</span>
+    </div>
+  </section>
+
+  <!-- СЛАЙД 6 -->
+  <section class="slide">
+    <div>
+      <div class="slide-header">
+        <h2>5. Клиентский сценарий и защита личных данных (Критерий №2)</h2>
+        <span class="badge">Личный кабинет и RBAC</span>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>4-шаговый сценарий онлайн-записи</h3>
+          <ul>
+            <li><strong>Шаг 1:</strong> Выбор услуги из активного каталога (30 или 60 мин).</li>
+            <li><strong>Шаг 2:</strong> Выбор специалиста, оказывающего выбранную услугу.</li>
+            <li><strong>Шаг 3:</strong> Выбор даты на горизонте 30 дней.</li>
+            <li><strong>Шаг 4:</strong> Выбор свободного слота и подтверждение в модальном окне.</li>
+            <li><strong>Личный кабинет:</strong> разделение на «Активные визиты» и «Историю», отмена предстоящей записи до начала визита (<code>T_start &gt; now</code>).</li>
+          </ul>
+        </div>
+        <div class="card-accent">
+          <h3>Изоляция персональных данных (Security)</h3>
+          <ul>
+            <li>Публичный эндпоинт <code>GET /api/v1/availability</code> возвращает только свободные интервалы времени без ФИО и телефонов других клиентов.</li>
+            <li>Эндпоинты <code>/api/v1/bookings/**</code> закрыты фильтром <code>SpringSecurityConfig</code> (требуется валидная сессия).</li>
+            <li><strong>Защита от IDOR:</strong> в <code>ClientBookingService</code> проверяется <code>booking.client.id == currentUser.id</code>; чужую запись нельзя просмотреть или отменить (<code>403 ACCESS_DENIED</code>).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Форум «Умная индустрия» • Кейс №5</span>
+      <span>Слайд 6 из 10</span>
+    </div>
+  </section>
+
+  <!-- СЛАЙД 7 -->
+  <section class="slide">
+    <div>
+      <div class="slide-header">
+        <h2>6. Админ-панель и синхронизация расписания (Критерий №3)</h2>
+        <span class="badge">Управление ресурсами</span>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Функционал администратора (ROLE_ADMIN)</h3>
+          <ul>
+            <li><strong>Модерация записей:</strong> фильтры по дате, мастеру и статусу; переходы <code>PENDING → CONFIRMED / REJECTED</code>, <code>CONFIRMED → COMPLETED / CANCELLED</code>.</li>
+            <li><strong>Редактор расписания:</strong> настройка рабочих смен и обеденных перерывов по дням недели (Пн–Вс) с защитой от самопересечений.</li>
+            <li><strong>Каталог услуг и мастеров:</strong> управление ценами и активностью с запретом деактивации при наличии будущих броней (<code>409 ACTIVE_BOOKINGS_EXIST</code>).</li>
+          </ul>
+        </div>
+        <div class="card-accent">
+          <h3>Мгновенное отражение изменений в UI</h3>
+          <ul>
+            <li>Алгоритм <code>AvailabilityCalculatorService</code> вычисляет сетку слотов динамически на основе актуальных интервалов <code>master_schedules</code> за вычетом активных броней и прошедшего времени.</li>
+            <li>Как только администратор меняет часы смены мастера или отменяет бронь, клиентский интерфейс мгновенно отображает обновлённую сетку слотов.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Форум «Умная индустрия» • Кейс №5</span>
+      <span>Слайд 7 из 10</span>
+    </div>
+  </section>
+
+  <!-- СЛАЙД 8 -->
+  <section class="slide">
+    <div>
+      <div class="slide-header">
+        <h2>7. Оптимизация, нагрузочная устойчивость и тестирование</h2>
+        <span class="badge">Инженерное качество</span>
+      </div>
+      <div class="grid-3">
+        <div class="card">
+          <div class="kpi">&lt; 25 мс</div>
+          <h3>Скорость расчёта слотов</h3>
+          <p>При нормативе NFR <code>p95 &lt;= 300 мс</code> расчёт сетки слотов занимает менее 25 мс благодаря индексам <code>(master_id, day_of_week)</code> и <code>(master_id, start_time)</code>.</p>
+        </div>
+        <div class="card">
+          <div class="kpi">0 N+1</div>
+          <h3>Оптимизация SQL/JPA</h3>
+          <p>Применение <code>@EntityGraph(attributePaths = ["client", "master", "service"])</code> загружает списки записей за 1 SQL-запрос с <code>JOIN FETCH</code>.</p>
+        </div>
+        <div class="card-accent">
+          <div class="kpi">33 теста</div>
+          <h3>Автотесты Backend + UI</h3>
+          <p>16 тестовых классов JUnit 5 / Testcontainers PostgreSQL 16 (включая стресс-тест в 20 потоков) + 17 UI-тестов Vitest / React Testing Library.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Форум «Умная индустрия» • Кейс №5</span>
+      <span>Слайд 8 из 10</span>
+    </div>
+  </section>
+
+  <!-- СЛАЙД 9 -->
+  <section class="slide">
+    <div>
+      <div class="slide-header">
+        <h2>8. Экономический эффект (ROI) и анализ рисков</h2>
+        <span class="badge">Критерии экспертного решения 81–100 баллов</span>
+      </div>
+      <div class="grid-2">
+        <div class="card-accent">
+          <h3>Расчёт ROI (салон на 5 мастеров, оборот 1,35 млн ₽/мес)</h3>
+          <ul>
+            <li>Ликвидация потерь от овербукинга (2,5%): <strong>+34 200 ₽/мес</strong></li>
+            <li>Запись 24/7 в нерабочие часы (+30 визитов): <strong>+54 000 ₽/мес</strong></li>
+            <li>Мгновенное перезаполнение отменённых окон: <strong>+18 000 ₽/мес</strong></li>
+            <li>Экономия 44 ч/мес времени администратора: <strong>+26 400 ₽/мес</strong></li>
+            <li><strong>Чистая выгода:</strong> <strong>132 600 ₽/мес (1,59 млн ₽/год)</strong></li>
+            <li><strong>Окупаемость (Payback):</strong> <strong>11 дней</strong> (CAPEX 45 000 ₽, OPEX 2 500 ₽/мес, <strong>годовой ROI = 2021%</strong>).</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Матрица митигации рисков</h3>
+          <ul>
+            <li><strong>Гонка потоков (Race Condition):</strong> закрыта индексом <code>EXCLUDE USING gist</code> + перехватом SQLState <code>23P01</code>.</li>
+            <li><strong>Утечка чужих записей (IDOR):</strong> закрыта проверкой владельца сессии и RBAC.</li>
+            <li><strong>Деактивация занятого мастера:</strong> блокируется кодом <code>409 ACTIVE_BOOKINGS_EXIST</code>.</li>
+            <li><strong>Сбой часовых поясов:</strong> хранение в <code>UTC</code> + рендеринг в <code>Europe/Moscow</code>.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Форум «Умная индустрия» • Кейс №5</span>
+      <span>Слайд 9 из 10</span>
+    </div>
+  </section>
+
+  <!-- СЛАЙД 10 -->
+  <section class="slide">
+    <div>
+      <div class="slide-header">
+        <h2>9. Паттерны внедрения и демонстрация для жюри</h2>
+        <span class="badge">Готовность к внедрению</span>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>3 готовых паттерна внедрения</h3>
+          <ul>
+            <li><strong>1. Single-Node Docker Compose:</strong> развёртывание за 1 минуту на любом VPS (<code>docker compose up -d</code> + <code>./gradlew bootRun</code>).</li>
+            <li><strong>2. Headless API / Виджет:</strong> подключение к существующему сайту или Telegram Mini App по спецификации <code>docs/api/openapi.yaml</code>.</li>
+            <li><strong>3. Multi-Branch Ready:</strong> модульная архитектура готова к масштабированию на сеть филиалов.</li>
+          </ul>
+        </div>
+        <div class="card-accent">
+          <h3>Тестовые учётные записи (кнопки быстрого входа в UI)</h3>
+          <ul>
+            <li><strong>Клиент:</strong> <code>client@booking.local</code> / <code>client12345</code><br/>(оформление записи, проверка занятых слотов, отмена в ЛК).</li>
+            <li><strong>Администратор:</strong> <code>admin@booking.local</code> / <code>admin12345</code><br/>(модерация заявок, изменение расписания смен, управление услугами).</li>
+            <li>Все 3 критерия приёмки Кейса №5 проверяются вживую менее чем за 2 минуты.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer">
+      <span>Спасибо за внимание! • Форум «Умная индустрия» • Кейс №5</span>
+      <span>Слайд 10 из 10</span>
+    </div>
+  </section>
+
+</body>
+</html>

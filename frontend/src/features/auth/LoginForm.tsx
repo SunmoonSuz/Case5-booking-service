@@ -104,6 +104,36 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess, onSwitchToRegis
         Войти
       </Button>
 
+      <div className="pt-3 border-t border-slate-100">
+        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 text-center">
+          Тестовые учётные записи (для демонстрации кейса)
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setEmail('client@booking.local');
+              setPassword('client12345');
+              setErrors({});
+            }}
+            className="px-3 py-2 text-xs font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg transition text-center min-h-[40px]"
+          >
+            Демо: Клиент
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setEmail('admin@booking.local');
+              setPassword('admin12345');
+              setErrors({});
+            }}
+            className="px-3 py-2 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg transition text-center min-h-[40px]"
+          >
+            Демо: Администратор
+          </button>
+        </div>
+      </div>
+
       {onSwitchToRegister && (
         <div className="text-center pt-2 text-sm text-slate-500">
           Нет аккаунта?{' '}

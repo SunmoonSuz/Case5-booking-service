@@ -1,0 +1,860 @@
+openapi: 3.0.3
+info:
+  title: Service Booking API (Форум «Умная индустрия» — Кейс №5)
+  description: |
+    REST API сервиса онлайн-записи на услуги с расписанием, личным кабинетом клиента,
+    административной панелью и аппаратной защитой от двойного бронирования (PostgreSQL GiST Exclusion Constraint).
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Локальный сервер разработки и демонстрации
+
+tags:
+  - name: Config
+    description: Системная конфигурация таймзоны и валюты
+  - name: Auth
+    description: Регистрация, аутентификация и управление сессией (HttpOnly Cookie JSESSIONID)
+  - name: Catalog
+    description: Публичный каталог активных услуг и специалистов
+  - name: Availability
+    description: Расчёт доступных временных слотов с учётом смен и активных броней
+  - name: Bookings (Client)
+    description: Личный кабинет клиента — создание, просмотр и отмена записей
+  - name: Admin Catalog & Schedules
+    description: Управление услугами, мастерами и рабочим расписанием (ROLE_ADMIN)
+  - name: Admin Bookings Moderation
+    description: Модерация и управление статусами записей клиентов (ROLE_ADMIN)
+
+paths:
+  /config:
+    get:
+      tags: [Config]
+      summary: Получить глобальные настройки заведения
+      responses:
+        '200':
+          description: Таймзона и валюта сервиса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigResponse'
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Регистрация нового клиента и автоматический вход
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Пользователь создан, установлена сессионная cookie JSESSIONID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          description: Email уже зарегистрирован (EMAIL_ALREADY_EXISTS)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Вход пользователя по email и паролю
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Успешная аутентификация, установлена сессионная cookie JSESSIONID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Неверный email или пароль (INVALID_CREDENTIALS)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Завершение текущей сессии
+      security:
+        - cookieAuth: []
+      responses:
+        '204':
+          description: Сессия уничтожена, cookie JSESSIONID очищена
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Получить профиль текущего авторизованного пользователя
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Профиль пользователя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /services:
+    get:
+      tags: [Catalog]
+      summary: Список активных услуг
+      responses:
+        '200':
+          description: Массив доступных для записи услуг
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceResponse'
+
+  /masters:
+    get:
+      tags: [Catalog]
+      summary: Список активных специалистов (с опциональной фильтрацией по услуге)
+      parameters:
+        - name: serviceId
+          in: query
+          required: false
+          description: UUID услуги для фильтрации мастеров, оказывающих данную услугу
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Массив активных мастеров
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MasterResponse'
+
+  /availability:
+    get:
+      tags: [Availability]
+      summary: Получить список свободных временных слотов мастера на выбранную дату
+      parameters:
+        - name: masterId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: serviceId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: date
+          in: query
+          required: true
+          description: Дата в формате YYYY-MM-DD (по часовому поясу заведения Europe/Moscow, горизонт 0..30 дней)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Доступные для бронирования слоты
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailabilityResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /bookings:
+    post:
+      tags: [Bookings (Client)]
+      summary: Создать новую запись на услугу (защищено от двойного бронирования)
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingRequest'
+      responses:
+        '201':
+          description: Запись успешно создана в статусе PENDING
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '409':
+          description: Выбранный слот уже занят параллельным запросом (SLOT_ALREADY_BOOKED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+  /bookings/my:
+    get:
+      tags: [Bookings (Client)]
+      summary: Получить список записей текущего клиента (личный кабинет)
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Список активных и архивных записей клиента
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookingResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /bookings/{id}/cancel:
+    post:
+      tags: [Bookings (Client)]
+      summary: Отменить собственную предстоящую запись (до начала визита)
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Запись переведена в статус CANCELLED, слот освобождён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+        '400':
+          description: Попытка отменить уже начавшийся или завершённый визит
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '403':
+          description: Попытка отменить чужую запись (ACCESS_DENIED)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+  /admin/services:
+    get:
+      tags: [Admin Catalog & Schedules]
+      summary: Получить все услуги (включая неактивные)
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Полный каталог услуг
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceResponse'
+    post:
+      tags: [Admin Catalog & Schedules]
+      summary: Создать новую услугу
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminServiceRequest'
+      responses:
+        '201':
+          description: Услуга создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceResponse'
+
+  /admin/services/{id}:
+    put:
+      tags: [Admin Catalog & Schedules]
+      summary: Обновить услугу или деактивировать её
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminServiceRequest'
+      responses:
+        '200':
+          description: Услуга обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceResponse'
+        '409':
+          description: Нельзя деактивировать услугу с активными будущими записями (ACTIVE_BOOKINGS_EXIST)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+  /admin/masters:
+    get:
+      tags: [Admin Catalog & Schedules]
+      summary: Получить всех мастеров (включая неактивных)
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Полный список мастеров
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MasterResponse'
+    post:
+      tags: [Admin Catalog & Schedules]
+      summary: Добавить нового мастера
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminMasterRequest'
+      responses:
+        '201':
+          description: Мастер создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterResponse'
+
+  /admin/masters/{id}:
+    put:
+      tags: [Admin Catalog & Schedules]
+      summary: Обновить профиль мастера, привязанные услуги или статус активности
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminMasterRequest'
+      responses:
+        '200':
+          description: Мастер обновлён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterResponse'
+        '409':
+          description: Нельзя деактивировать мастера с будущими записями (ACTIVE_BOOKINGS_EXIST)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+  /admin/masters/{id}/schedules:
+    get:
+      tags: [Admin Catalog & Schedules]
+      summary: Получить недельное расписание мастера
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Интервалы работы мастера по дням недели (1..7)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterScheduleResponse'
+    put:
+      tags: [Admin Catalog & Schedules]
+      summary: Полностью обновить недельное расписание мастера
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMasterScheduleRequest'
+      responses:
+        '200':
+          description: Расписание сохранено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MasterScheduleResponse'
+
+  /admin/bookings:
+    get:
+      tags: [Admin Bookings Moderation]
+      summary: Журнал всех записей с фильтрацией по дате, мастеру и статусу
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/BookingStatus'
+        - name: masterId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Отфильтрованный список записей с контактами клиентов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookingResponse'
+
+  /admin/bookings/{id}/status:
+    patch:
+      tags: [Admin Bookings Moderation]
+      summary: Изменить статус записи (подтвердить, отклонить, отменить, завершить)
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBookingStatusRequest'
+      responses:
+        '200':
+          description: Статус записи успешно изменён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+        '400':
+          description: Недопустимый переход статуса (INVALID_STATUS_TRANSITION)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+
+  schemas:
+    ConfigResponse:
+      type: object
+      required: [timezone, currency]
+      properties:
+        timezone:
+          type: string
+          example: Europe/Moscow
+        currency:
+          type: string
+          example: RUB
+
+    RegisterRequest:
+      type: object
+      required: [email, password, name, phone]
+      properties:
+        email:
+          type: string
+          format: email
+          example: client@booking.local
+        password:
+          type: string
+          minLength: 8
+          example: client12345
+        name:
+          type: string
+          example: Иван Петров
+        phone:
+          type: string
+          example: "+79000000001"
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: client@booking.local
+        password:
+          type: string
+          example: client12345
+
+    UserResponse:
+      type: object
+      required: [id, email, name, phone, role]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        name:
+          type: string
+        phone:
+          type: string
+        role:
+          type: string
+          enum: [CLIENT, ADMIN]
+
+    ServiceResponse:
+      type: object
+      required: [id, name, durationMinutes, price, currency, isActive]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Мужская стрижка и укладка
+        description:
+          type: string
+          nullable: true
+        durationMinutes:
+          type: integer
+          enum: [30, 60]
+        price:
+          type: number
+          format: double
+          example: 1800.00
+        currency:
+          type: string
+          example: RUB
+        isActive:
+          type: boolean
+
+    AdminServiceRequest:
+      type: object
+      required: [name, durationMinutes, price, isActive]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        durationMinutes:
+          type: integer
+          enum: [30, 60]
+        price:
+          type: number
+          minimum: 0
+        isActive:
+          type: boolean
+
+    MasterResponse:
+      type: object
+      required: [id, name, isActive, serviceIds]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Алексей Громов
+        description:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        serviceIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    AdminMasterRequest:
+      type: object
+      required: [name, isActive, serviceIds]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        serviceIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    ScheduleSlotDto:
+      type: object
+      required: [dayOfWeek, startTime, endTime]
+      properties:
+        id:
+          type: string
+          format: uuid
+        dayOfWeek:
+          type: integer
+          minimum: 1
+          maximum: 7
+        startTime:
+          type: string
+          example: "10:00"
+        endTime:
+          type: string
+          example: "14:00"
+
+    MasterScheduleResponse:
+      type: object
+      required: [masterId, schedules]
+      properties:
+        masterId:
+          type: string
+          format: uuid
+        schedules:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleSlotDto'
+
+    UpdateMasterScheduleRequest:
+      type: object
+      required: [schedules]
+      properties:
+        schedules:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleSlotDto'
+
+    AvailableSlotDto:
+      type: object
+      required: [startTime, endTime]
+      properties:
+        startTime:
+          type: string
+          format: date-time
+          example: "2026-11-10T08:00:00Z"
+        endTime:
+          type: string
+          format: date-time
+          example: "2026-11-10T09:00:00Z"
+
+    AvailabilityResponse:
+      type: object
+      required: [masterId, serviceId, date, timezone, slots]
+      properties:
+        masterId:
+          type: string
+          format: uuid
+        serviceId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        timezone:
+          type: string
+          example: Europe/Moscow
+        slots:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailableSlotDto'
+
+    CreateBookingRequest:
+      type: object
+      required: [masterId, serviceId, startTime]
+      properties:
+        masterId:
+          type: string
+          format: uuid
+        serviceId:
+          type: string
+          format: uuid
+        startTime:
+          type: string
+          format: date-time
+          example: "2026-11-10T08:00:00Z"
+
+    BookingStatus:
+      type: string
+      enum: [PENDING, CONFIRMED, REJECTED, CANCELLED, COMPLETED]
+
+    UpdateBookingStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/BookingStatus'
+
+    BookingResponse:
+      type: object
+      required:
+        - id
+        - clientId
+        - clientName
+        - clientPhone
+        - masterId
+        - masterName
+        - serviceId
+        - serviceNameSnapshot
+        - servicePriceSnapshot
+        - currency
+        - startTime
+        - endTime
+        - status
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        clientId:
+          type: string
+          format: uuid
+        clientName:
+          type: string
+        clientPhone:
+          type: string
+        masterId:
+          type: string
+          format: uuid
+        masterName:
+          type: string
+        serviceId:
+          type: string
+          format: uuid
+        serviceNameSnapshot:
+          type: string
+        servicePriceSnapshot:
+          type: number
+        currency:
+          type: string
+          example: RUB
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/BookingStatus'
+        createdAt:
+          type: string
+          format: date-time
+
+    ApiErrorResponse:
+      type: object
+      required: [timestamp, status, error, message, path]
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error:
+          type: string
+          example: SLOT_ALREADY_BOOKED
+        message:
+          type: string
+          example: Выбранное время уже занято. Пожалуйста, выберите другой слот.
+        path:
+          type: string
+        fieldErrors:
+          type: object
+          additionalProperties:
+            type: string
+
+  responses:
+    ValidationError:
+      description: Ошибка валидации входных параметров (VALIDATION_ERROR)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+    UnauthorizedError:
+      description: Требуется авторизация (UNAUTHORIZED)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+    NotFoundError:
+      description: Ресурс не найден (NOT_FOUND)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'

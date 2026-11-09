@@ -44,5 +44,7 @@ app:
   timezone: ${APP_TIMEZONE:Europe/Moscow}
   currency: ${APP_CURRENCY:RUB}
   bootstrap-admin:
-    email: ${APP_BOOTSTRAP_ADMIN_EMAIL:admin@example.com}
+    email: ${APP_BOOTSTRAP_ADMIN_EMAIL:admin@booking.local}
     password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:admin12345}
+  demo-seed:
+    enabled: ${APP_DEMO_SEED_ENABLED:true}

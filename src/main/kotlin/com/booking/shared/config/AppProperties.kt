@@ -6,10 +6,15 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 data class AppProperties(
     val timezone: String = "Europe/Moscow",
     val currency: String = "RUB",
-    val bootstrapAdmin: BootstrapAdminProperties = BootstrapAdminProperties()
+    val bootstrapAdmin: BootstrapAdminProperties = BootstrapAdminProperties(),
+    val demoSeed: DemoSeedProperties = DemoSeedProperties()
 )
 
 data class BootstrapAdminProperties(
-    val email: String = "admin@example.com",
+    val email: String = "admin@booking.local",
     val password: String = "admin12345"
+)
+
+data class DemoSeedProperties(
+    val enabled: Boolean = true
 )

@@ -173,4 +173,21 @@ describe('AuthModal (AC-001: Login, Registration & Validation)', () => {
       expect(handleSuccess).toHaveBeenCalled();
     });
   });
+
+  it('populates test credentials when clicking demo account buttons', async () => {
+    renderWithProviders(<AuthModal isOpen={true} initialTab="login" onClose={() => {}} />);
+
+    const demoClientBtn = screen.getByRole('button', { name: 'Демо: Клиент' });
+    fireEvent.click(demoClientBtn);
+
+    const emailInput = screen.getByPlaceholderText('client@example.com') as HTMLInputElement;
+    const passwordInput = screen.getByPlaceholderText('••••••••') as HTMLInputElement;
+    expect(emailInput.value).toBe('client@booking.local');
+    expect(passwordInput.value).toBe('client12345');
+
+    const demoAdminBtn = screen.getByRole('button', { name: 'Демо: Администратор' });
+    fireEvent.click(demoAdminBtn);
+    expect(emailInput.value).toBe('admin@booking.local');
+    expect(passwordInput.value).toBe('admin12345');
+  });
 });

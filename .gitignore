@@ -21,3 +21,31 @@ node_modules/
 frontend/dist/
 frontend/.cache/
 frontend/node_modules/
+
+### Local agent configuration and workflow documents ###
+.agents/
+AGENTS.md
+**/AGENTS.md
+docs/agent/
+docs/ANDROID-START.md
+docs/SMALL-PROJECT-START.md
+docs/DEFECT-AND-CHANGE-PROCESS.md
+docs/README.md
+docs/PROJECT-PROFILE.md
+docs/test/TEST-REPORT.md
+docs/qa/QA-EXECUTION-REPORT-001.md
+docs/release/RELEASE-NOTES-v1.0.0.md
+docs/release/RELEASE-CHECKLIST.md
+docs/review/REVIEW-REPORT-001-architecture-audit.md
+docs/review/REVIEW-REPORT-002-backend-foundation.md
+docs/review/REVIEW-REPORT-003-identity-module.md
+docs/review/REVIEW-REPORT-004-catalog-and-schedule.md
+docs/review/REVIEW-REPORT-005-booking-core.md
+docs/review/REVIEW-REPORT-006-web-frontend.md
+
+### Local archives, database dumps and secrets ###
+/docs.zip
+*.dump
+.env
+.env.*
+!.env.example
